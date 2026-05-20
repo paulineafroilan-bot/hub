@@ -1146,7 +1146,7 @@ body{
         <div style="font-size:12px;color:var(--text2);margin-bottom:9px;line-height:1.7">Select your <strong>pauline_backup_[date].json</strong> file. All your entries (tasks, budget, gaps, gifts, etc.) will be restored instantly.</div>
         <label style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:rgba(255,255,255,.9);border:1.5px solid var(--border);border-radius:99px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);font-family:Inter,sans-serif;transition:all .2s" onmouseover="this.style.borderColor='var(--sm)'" onmouseout="this.style.borderColor='var(--border)'">
           📂 Choose backup file
-          <input type="file" id="restore-file-input" accept=".json" style="display:none" onchange="restoreFromBackup(this)"/>
+          <input type="file" id="restore-file-input" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="restoreFromBackup(this)"/>
         </label>
         <div id="restore-fb" style="font-size:12px;font-weight:600;margin-top:9px;min-height:16px;padding:0 4px"></div>
       </div>
@@ -3190,7 +3190,11 @@ function restoreFromBackup(input){
   const reader = new FileReader();
   reader.onload = function(e){
     try{
-      const data = JSON.parse(e.target.result);
+      // Strip BOM and whitespace that phones sometimes add
+      var raw = e.target.result;
+      if(raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1); // remove BOM
+      raw = raw.trim();
+      const data = JSON.parse(raw);
 
       // Accept ANY pauline backup — old or new version, Garden or Hub
       // Just check it has at least one recognizable data field
@@ -3269,11 +3273,12 @@ function restoreFromBackup(input){
 
     } catch(err){
       fb.style.color = 'var(--urgent)';
-      fb.textContent = '❌ Could not read backup file. Make sure it is a valid pauline_backup.json file.';
+      fb.textContent = '❌ Error: ' + err.message + '. Try downloading a fresh backup from your PC and transferring again.';
       console.error('Restore error:', err);
     }
   };
-  reader.readAsText(file);
+  // Try UTF-8 first, fallback to latin1 for older backups
+  try { reader.readAsText(file, 'UTF-8'); } catch(e){ reader.readAsText(file); }
 }
 
 // ── PASSWORD PROTECTION ──
@@ -3632,7 +3637,7 @@ function saveAll(){
   showSaveIndicator();
 }
 
-const DATA_VERSION='v54-2026-05-16';
+const DATA_VERSION='v56-2026-05-16';
 
 function loadAll(){
   const savedVersion=localStorage.getItem('pg_data_version');
@@ -3814,30 +3819,57 @@ function saveNtfyTopic(){ /* ntfy removed — not used */ }
 
 
 // ── INIT ──
-// ── SNAPSHOT SEEDER ──
-// If localStorage has no data yet (first open on this device),
-// pre-seed it with this file's built-in default data so
-// the app has meaningful content immediately.
+// ── SNAPSHOT SEEDER — baked from backup 2026-05-20 ──
+// Real data from Pauline's backup embedded directly.
+// On any new device, this data loads automatically.
+var BACKUP_SNAPSHOT = {
+  tasks: [{"id": 1, "title": "Reconcile attestations", "assignee": "Amber", "status": "inprogress", "urgent": true, "note": "Check WellMed portal first"}, {"id": 3, "title": "Send notes to Dr. Ekadi for signature", "assignee": "Dr Ekadi", "status": "inprogress", "urgent": false, "note": ""}, {"id": 4, "title": "Submit WellMed attestations", "assignee": "", "status": "pending", "urgent": false, "note": ""}, {"id": 6, "title": "Check hospital admissions", "assignee": "", "status": "done", "urgent": false, "note": ""}, {"id": 7, "title": "Inovalon submission", "assignee": "Sidra", "status": "done", "urgent": false, "note": "Due end of month"}, {"id": 13353, "title": "Mammo and colo", "assignee": "Nausheen", "status": "done", "urgent": false, "note": "", "dateAdded": "May 14"}, {"id": 13386, "title": "\ud83d\udccb check echo Eberhart (May 15)", "assignee": "", "status": "pending", "urgent": false, "note": "From Google Sheet column H", "dateAdded": "May 15", "fromSheet": true}, {"id": 13388, "title": "ATT Pacheco ulcer code 05/12/2026", "assignee": "Nausheen", "status": "inprogress", "urgent": true, "note": "", "dateAdded": "May 18"}, {"id": 13389, "title": "ATT Patterson dementia behaveioral dist 05/11/2026", "assignee": "Nausheen", "status": "inprogress", "urgent": true, "note": "", "dateAdded": "May 18"}, {"id": 13390, "title": "ATT garza completion 05/12/2026", "assignee": "Nausheen", "status": "inprogress", "urgent": true, "note": "", "dateAdded": "May 18"}, {"id": 13391, "title": "williams larry -ultrasound; amburn-portal hpn", "assignee": "Amber", "status": "inprogress", "urgent": true, "note": "", "dateAdded": "May 18"}, {"id": 13392, "title": "optum checkout and att check", "assignee": "Ismat", "status": "pending", "urgent": true, "note": "", "dateAdded": "May 18"}, {"id": 13393, "title": "Send out TRC Overview", "assignee": "", "status": "pending", "urgent": true, "note": "", "dateAdded": "May 19"}, {"id": 13394, "title": "GarnettC eye exam to confirm dilation", "assignee": "Andaleeb", "status": "pending", "urgent": false, "note": "", "dateAdded": "May 19"}],
+  patients: [],
+  programs: [{"id": 1, "name": "WellMed", "open": false, "caregaps": [{"name": "Colo", "done": 0, "total": 20, "assign": ""}, {"name": "Mammo", "done": 0, "total": 20, "assign": ""}, {"name": "AWV", "done": 0, "total": 20, "assign": ""}, {"name": "KED", "done": 0, "total": 20, "assign": ""}, {"name": "PHQ-9", "done": 0, "total": 20, "assign": ""}, {"name": "Minicog", "done": 0, "total": 20, "assign": ""}, {"name": "HF ROS", "done": 0, "total": 20, "assign": ""}, {"name": "HF echo", "done": 0, "total": 20, "assign": ""}, {"name": "HF BNP", "done": 0, "total": 20, "assign": ""}, {"name": "COA", "done": 0, "total": 20, "assign": ""}, {"name": "A1c", "done": 0, "total": 20, "assign": ""}, {"name": "Eye exam", "done": 0, "total": 20, "assign": ""}, {"name": "BP", "done": 0, "total": 20, "assign": ""}, {"name": "attestations", "done": 0, "total": 10, "assign": ""}], "attestations": []}, {"id": 2, "name": "Humana", "open": false, "caregaps": [{"name": "Colo", "done": 0, "total": 15, "assign": ""}, {"name": "Mammo", "done": 0, "total": 15, "assign": ""}, {"name": "AWV", "done": 0, "total": 15, "assign": ""}, {"name": "PHQ-9", "done": 0, "total": 15, "assign": ""}, {"name": "BP", "done": 0, "total": 15, "assign": ""}, {"name": "Attestations", "done": 0, "total": 10, "assign": ""}], "attestations": []}, {"id": 3, "name": "BCBS", "open": false, "caregaps": [{"name": "Mammo", "done": 0, "total": 18, "assign": ""}, {"name": "Eye exam", "done": 0, "total": 18, "assign": ""}, {"name": "COA", "done": 0, "total": 18, "assign": ""}, {"name": "AWV", "done": 0, "total": 18, "assign": ""}, {"name": "BP", "done": 0, "total": 18, "assign": ""}, {"name": "Attestations", "done": 0, "total": 10, "assign": ""}], "attestations": []}, {"id": 4, "name": "Catalyst", "open": false, "caregaps": [{"name": "Colo", "done": 0, "total": 12, "assign": ""}, {"name": "Mammo", "done": 0, "total": 12, "assign": ""}, {"name": "AWV", "done": 0, "total": 12, "assign": ""}, {"name": "KED", "done": 0, "total": 12, "assign": ""}, {"name": "PHQ-9", "done": 0, "total": 12, "assign": ""}, {"name": "Minicog", "done": 0, "total": 12, "assign": ""}, {"name": "BP", "done": 0, "total": 12, "assign": ""}, {"name": "Attestations", "done": 0, "total": 10, "assign": ""}], "attestations": []}, {"id": 5, "name": "Medicare ACO", "open": false, "caregaps": [{"name": "Colo", "done": 0, "total": 25, "assign": ""}, {"name": "Mammo", "done": 0, "total": 25, "assign": ""}, {"name": "AWV", "done": 0, "total": 25, "assign": ""}, {"name": "KED", "done": 0, "total": 25, "assign": ""}, {"name": "PHQ-9", "done": 0, "total": 25, "assign": ""}, {"name": "Minicog", "done": 0, "total": 25, "assign": ""}, {"name": "HF ROS", "done": 0, "total": 25, "assign": ""}, {"name": "HF echo", "done": 0, "total": 25, "assign": ""}, {"name": "HF BNP", "done": 0, "total": 25, "assign": ""}, {"name": "COA", "done": 0, "total": 25, "assign": ""}, {"name": "A1c", "done": 0, "total": 25, "assign": ""}, {"name": "Eye exam", "done": 0, "total": 25, "assign": ""}, {"name": "BP", "done": 0, "total": 25, "assign": ""}, {"name": "Attestations", "done": 0, "total": 10, "assign": ""}], "attestations": []}, {"id": 6, "name": "Inovalon", "open": false, "caregaps": [{"name": "AWV", "done": 0, "total": 10, "assign": ""}, {"name": "PHQ-9", "done": 0, "total": 10, "assign": ""}, {"name": "Minicog", "done": 0, "total": 10, "assign": ""}, {"name": "BP", "done": 0, "total": 10, "assign": ""}, {"name": "Attestations", "done": 0, "total": 10, "assign": ""}], "attestations": []}, {"id": 7, "name": "Optum", "open": true, "caregaps": [{"name": "Colo", "done": 0, "total": 15, "assign": ""}, {"name": "Mammo", "done": 0, "total": 15, "assign": ""}, {"name": "AWV", "done": 0, "total": 15, "assign": ""}, {"name": "PHQ-9", "done": 0, "total": 15, "assign": ""}, {"name": "BP", "done": 0, "total": 15, "assign": ""}, {"name": "A1c", "done": 0, "total": 15, "assign": ""}, {"name": "Attestations", "done": 1, "total": 19, "assign": ""}], "attestations": []}],
+  hosps: [{"id": 1, "name": "Pt A", "status": "admitted", "date": "Apr 28", "assign": "Amber"}, {"id": 2, "name": "Pt B", "status": "discharged", "date": "Apr 30", "assign": ""}],
+  childT: [{"id": 2, "title": "Phonics \u2014 letter B", "done": true, "urgent": false, "sched": "daily", "schedDay": "", "schedTime": "16:00", "schedDate": "", "calPauline": true, "calJimson": false}, {"id": 3, "title": "Pack school snack", "done": true, "urgent": false, "sched": "daily", "schedDay": "", "schedTime": "07:00", "schedDate": "", "calPauline": true, "calJimson": false}, {"id": 4, "title": "Counting practice 1-20", "done": true, "urgent": false, "sched": "weekly", "schedDay": "Monday", "schedTime": "15:30", "schedDate": "", "calPauline": true, "calJimson": true}, {"id": 5, "title": "Story time", "done": true, "urgent": false, "sched": "daily", "schedDay": "", "schedTime": "20:00", "schedDate": "", "calPauline": true, "calJimson": true}, {"id": 6, "title": "flu vaccine", "done": false, "urgent": true, "sched": "once", "schedTime": "09:21", "schedDay": "", "schedDate": "2026-05-23", "calPauline": true, "calJimson": true}],
+  husT: [{"id": 1, "title": "Prepare lunch for his shift", "done": false}, {"id": 2, "title": "He wants lechon this weekend", "done": false}],
+  homeT: [{"id": 1, "title": "Pay electricity bill", "done": false, "urgent": false, "sched": "monthly", "schedTime": "", "schedDay": "", "schedDate": "", "calPauline": true, "calJimson": true}, {"id": 2, "title": "Grocery run", "done": false, "urgent": false, "sched": "weekly", "schedDay": "Saturday", "schedTime": "09:00", "schedDate": "", "calPauline": true, "calJimson": false}],
+  meals: [{"id": 1, "day": "Monday", "name": "Adobo + rice", "done": false, "ingredients": ["chicken"]}, {"id": 2, "day": "Tuesday", "name": "Sinigang + rice", "done": false, "ingredients": []}, {"id": 3, "day": "Wednesday", "name": "Pasta", "done": false, "ingredients": []}, {"id": 4, "day": "Thursday", "name": "Fried chicken", "done": false, "ingredients": []}, {"id": 5, "day": "Friday", "name": "Nilaga", "done": false, "ingredients": []}, {"id": 6, "day": "Saturday", "name": "Pancit", "done": false, "ingredients": []}, {"id": 7, "day": "Sunday", "name": "fried chicken fillet & fish sinigang", "done": false, "ingredients": []}],
+  gifts: [{"id": 1, "person": "Papang", "item": "Barong Tagalog", "status": "ordered", "budget": 500, "amount": 100}, {"id": 2, "person": "Mamang", "item": "Handbag", "status": "idea"}, {"id": 3, "person": "Jimson", "item": "Watch", "status": "received"}, {"id": 4, "person": "Papang", "item": "ddw", "status": "idea"}],
+  debts: [{"id": 1, "name": "Michelle", "amount": 10000, "paid": 10000}, {"id": 2, "name": "Pamela", "amount": 55000, "paid": 30000}, {"id": 3, "name": "Paul", "amount": 10000, "paid": 0}, {"id": 4, "name": "Melody", "amount": 30000, "paid": 0}, {"id": 5, "name": "Mamang", "amount": 50000, "paid": 0}, {"id": 6, "name": "Joeffel Architect fee", "amount": 70650, "paid": 28260}, {"id": 7, "name": "Haru Tuition", "amount": 35000, "paid": 4000}],
+  exps: [{"id": 1, "name": "Rent", "budget": 15000, "spent": 15000, "log": []}, {"id": 2, "name": "Internet", "budget": 1500, "spent": 1500, "log": []}, {"id": 3, "name": "Tithes", "budget": 2000, "spent": 2000, "log": []}, {"id": 4, "name": "Pru insurance", "budget": 3000, "spent": 3000, "log": []}, {"id": 5, "name": "Sunlife insurance", "budget": 2500, "spent": 0, "log": []}, {"id": 6, "name": "GCash investment / GSave", "budget": 2000, "spent": 0, "log": []}, {"id": 7, "name": "Church giving / Papang", "budget": 3000, "spent": 3000, "log": []}, {"id": 8, "name": "Groceries & food", "budget": 12000, "spent": 8500, "log": []}, {"id": 9, "name": "Skin care & personal", "budget": 2500, "spent": 1200, "log": []}, {"id": 10, "name": "Subscriptions", "budget": 1500, "spent": 1100, "log": []}, {"id": 12, "name": "Gifts (auto-synced)", "budget": 500, "spent": 100, "log": [], "cat": "gifts"}, {"id": 16, "name": "Credit Card - UnionBank", "budget": 22790, "spent": 4000, "log": [{"amt": 4000, "note": "paind 05/2026", "date": "5/16/2026"}], "cat": "misc"}],
+  savs: [{"id": 1, "name": "Haru's education- AFFSLAI", "goal": 500000, "saved": 72000, "log": []}, {"id": 2, "name": "House fund-PSSLAI", "goal": 2000000, "saved": 120000, "log": []}, {"id": 3, "name": "Emergency fund-mamamg PSSLAI", "goal": 500000, "saved": 25000, "log": [{"amt": 25000, "note": "cash", "date": "5/17/2026"}]}],
+  banks: [{"id": 1, "name": "BPI", "key": "bpi", "cls": "bank-bpi", "bal": 70500}, {"id": 2, "name": "Security Bank", "key": "sbank", "cls": "bank-sbank", "bal": 289873}, {"id": 3, "name": "GCash", "key": "gcash", "cls": "bank-gcash", "bal": 100}, {"id": 4, "name": "GSave", "key": "gsave", "cls": "bank-gsave", "bal": 100}, {"id": 7, "name": "BDO", "key": "custom_1778953263589", "cls": "bank-custom", "bal": 63000}, {"id": 8, "name": "Payoneer", "key": "custom_1778954931598", "cls": "bank-custom", "bal": 330000}, {"id": 9, "name": "cash on hand - emergency", "key": "custom_1779023970267", "cls": "bank-custom", "bal": 25000}, {"id": 10, "name": "revolving cash", "key": "custom_1779023987660", "cls": "bank-custom", "bal": 10000}],
+  stores: [{"name": "Online Store", "type": "Online", "items": []}, {"name": "Physical Store", "type": "Physical", "items": [{"name": "chicken", "qty": 1, "cat": "Grocery", "got": false, "id": 1}]}],
+  calEvs: [{"id": 1, "title": "Wednesday report \u2014 All teams", "date": "", "time": "10:00", "cal": "work", "share": "no"}, {"id": 2, "title": "Hospital admissions check", "date": "", "time": "08:30", "cal": "work", "share": "no"}, {"id": 3, "title": "TRC Overview \u2014 All teams (every Tuesday)", "date": "", "time": "09:00", "cal": "work", "share": "no"}],
+  income: 0
+};
+
 function seedIfEmpty(){
   var hasData=false;
   try{hasData=!!localStorage.getItem('pg_tasks');}catch(e){}
   if(!hasData){
-    // Seed tasks, patients, meals, gifts etc. from built-in defaults
+    // Seed with real backup data
     try{
-      localStorage.setItem('pg_tasks',JSON.stringify(tasks));
-      localStorage.setItem('pg_patients',JSON.stringify(patients));
-      localStorage.setItem('pg_programs',JSON.stringify(programs));
-      localStorage.setItem('pg_hosps',JSON.stringify(hosps));
-      localStorage.setItem('pg_childT',JSON.stringify(childT));
-      localStorage.setItem('pg_meals',JSON.stringify(meals));
-      localStorage.setItem('pg_husT',JSON.stringify(husT));
-      localStorage.setItem('pg_gifts',JSON.stringify(gifts));
-      localStorage.setItem('pg_debts',JSON.stringify(debts));
-      localStorage.setItem('pg_exps',JSON.stringify(exps));
-      localStorage.setItem('pg_savs',JSON.stringify(savs));
-      localStorage.setItem('pg_stores',JSON.stringify(stores));
-      localStorage.setItem('pg_data_version',DATA_VERSION);
-    }catch(e){}
+      localStorage.setItem('pg_tasks', JSON.stringify(BACKUP_SNAPSHOT.tasks));
+      localStorage.setItem('pg_patients', JSON.stringify(BACKUP_SNAPSHOT.patients));
+      localStorage.setItem('pg_programs', JSON.stringify(BACKUP_SNAPSHOT.programs));
+      localStorage.setItem('pg_hosps', JSON.stringify(BACKUP_SNAPSHOT.hosps));
+      localStorage.setItem('pg_childT', JSON.stringify(BACKUP_SNAPSHOT.childT));
+      localStorage.setItem('pg_meals', JSON.stringify(BACKUP_SNAPSHOT.meals));
+      localStorage.setItem('pg_husT', JSON.stringify(BACKUP_SNAPSHOT.husT));
+      try{localStorage.setItem('pg_homeT', JSON.stringify(BACKUP_SNAPSHOT.homeT));}catch(e){}
+      localStorage.setItem('pg_gifts', JSON.stringify(BACKUP_SNAPSHOT.gifts));
+      localStorage.setItem('pg_debts', JSON.stringify(BACKUP_SNAPSHOT.debts));
+      localStorage.setItem('pg_exps', JSON.stringify(BACKUP_SNAPSHOT.exps));
+      localStorage.setItem('pg_savs', JSON.stringify(BACKUP_SNAPSHOT.savs));
+      localStorage.setItem('pg_stores', JSON.stringify(BACKUP_SNAPSHOT.stores));
+      localStorage.setItem('pg_data_version', DATA_VERSION);
+      // Banks with balances
+      BACKUP_SNAPSHOT.banks.forEach(function(b){
+        try{localStorage.setItem('bank_'+b.key, b.bal||0);}catch(e){}
+      });
+      // Income
+      if(BACKUP_SNAPSHOT.income > 0){
+        try{localStorage.setItem('pg_income_raw', BACKUP_SNAPSHOT.income);}catch(e){}
+      }
+    }catch(e){ console.error('Seed error:',e); }
   }
 }
 // ── TAB REFRESH FUNCTIONS ──
