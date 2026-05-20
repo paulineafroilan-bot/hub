@@ -407,10 +407,55 @@ body{
 /* ── FOOTER ── */
 .footer{background:linear-gradient(120deg,var(--forest),var(--fm));padding:12px 17px;font-size:11px;color:rgba(255,255,255,.7);text-align:center}
 @media(max-width:520px){.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.nb{font-size:9px;min-width:52px;padding:8px 2px}.qp-subcats{grid-template-columns:1fr}.cal-stats{grid-template-columns:1fr 1fr}.cal-grid td{min-height:54px}.cal-ev-dot{font-size:9px}}
+
+/* ── PASSWORD SCREEN ── */
+#pw-screen{position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#1B4D2E 0%,#2D6A4F 40%,#1B4D2E 100%);
+  flex-direction:column;gap:0;padding:20px}
+#pw-card{background:rgba(255,254,248,.97);border-radius:24px;
+  padding:36px 32px;max-width:360px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center}
+#pw-cactus{font-size:56px;margin-bottom:8px;display:block}
+#pw-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;
+  color:#1B4D2E;margin-bottom:4px}
+#pw-sub{font-size:12px;color:#9A8060;margin-bottom:24px}
+#pw-input{width:100%;padding:13px 16px;border:2px solid #D4C9A8;border-radius:12px;
+  font-size:18px;text-align:center;letter-spacing:6px;outline:none;
+  font-family:Inter,sans-serif;color:#1B4D2E;background:rgba(255,254,248,.9);
+  box-sizing:border-box;transition:border .2s}
+#pw-input:focus{border-color:#1B4D2E}
+#pw-input.shake{animation:shake .4s}
+#pw-btn{margin-top:14px;width:100%;padding:13px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,#1B4D2E,#2D6A4F);color:#fff;
+  font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;
+  transition:opacity .2s}
+#pw-btn:hover{opacity:.88}
+#pw-err{font-size:12px;color:#B71C1C;margin-top:10px;min-height:18px;font-weight:600}
+#pw-hint{font-size:11px;color:#9A8060;margin-top:16px;line-height:1.6}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 </style>
 </head>
 <body>
-<div class="app">
+<!-- ── PASSWORD SCREEN ── -->
+<div id="pw-screen">
+  <div id="pw-card">
+    <span id="pw-cactus">🌵</span>
+    <div id="pw-title">Pauline's Hub</div>
+    <div id="pw-sub">Command Center · Private Access</div>
+    <input id="pw-input" type="password" placeholder="••••••••"
+      maxlength="20" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')checkPw()"/>
+    <button id="pw-btn" onclick="checkPw()">Enter</button>
+    <div id="pw-err"></div>
+    <div id="pw-hint">
+      🔒 This app is password protected.<br>
+      Enter your password to access Pauline's Hub.
+    </div>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none">
 
 <!-- ═══ REMINDER MODAL ═══ -->
 <div class="modal-overlay" id="modal-remind">
@@ -3226,6 +3271,49 @@ function restoreFromBackup(input){
   reader.readAsText(file);
 }
 
+// ── PASSWORD PROTECTION ──
+(function(){
+  // Change the password below — pick something only you know
+  var PW = 'pauline2026';
+
+  // Check if already unlocked in this session
+  if(sessionStorage.getItem('ph_unlocked')==='yes'){
+    document.getElementById('pw-screen').style.display='none';
+    document.getElementById('main-app').style.display='block';
+    return;
+  }
+
+  // Focus password input on load
+  setTimeout(function(){
+    var inp=document.getElementById('pw-input');
+    if(inp) inp.focus();
+  },300);
+})();
+
+function checkPw(){
+  var PW='pauline2026'; // same password as above
+  var inp=document.getElementById('pw-input');
+  var err=document.getElementById('pw-err');
+  if(!inp)return;
+  var val=inp.value.trim();
+  if(val===PW){
+    sessionStorage.setItem('ph_unlocked','yes');
+    document.getElementById('pw-screen').style.display='none';
+    document.getElementById('main-app').style.display='block';
+    // Trigger init render
+    try{renderPipeline();renderAssigneeFilter();renderPatients();renderQPPrograms();
+    renderTeam();renderHosp();renderChild();renderMeals();renderHus();
+    renderHome();renderGifts();renderBudget();renderBankGrid();renderStoreTabs();
+    renderShop();renderTodayTab();updOv();renderWorkCalEvList();
+    refreshCalViews();refreshSheetEvents();updLastBackupInfo();}catch(e){}
+  } else {
+    err.textContent='Incorrect password. Please try again.';
+    inp.value='';
+    inp.classList.add('shake');
+    setTimeout(function(){inp.classList.remove('shake');inp.focus();},500);
+  }
+}
+
 // ── CSV EXPORT ──
 function dlCSV(sec){
   const fb=document.getElementById('csv-fb');let rows=[];
@@ -3539,7 +3627,7 @@ function saveAll(){
   showSaveIndicator();
 }
 
-const DATA_VERSION='v51-2026-05-16';
+const DATA_VERSION='v52-2026-05-16';
 
 function loadAll(){
   const savedVersion=localStorage.getItem('pg_data_version');
@@ -3860,5 +3948,6 @@ updOv();
 // Show last save time
 setTimeout(()=>{ const el=document.getElementById('save-dot'); if(el) el.textContent='✅ Data loaded'; setTimeout(()=>{if(el)el.textContent='';},3000); },500);
 </script>
+</div><!-- end main-app -->
 </body>
 </html>
