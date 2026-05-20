@@ -3193,7 +3193,7 @@ function restoreFromBackup(input){
       const data = JSON.parse(e.target.result);
 
       // Validate it's a Pauline backup
-      if(!data._meta || data._meta.appName !== "Pauline's Hub Command Center"){
+      if(!data._meta || (data._meta.appName !== "Pauline's Hub Command Center" && data._meta.appName !== "Pauline's Garden Command Center")){
         fb.textContent = "❌ This does not look like a Pauline's Garden backup file.";
         fb.style.color = 'var(--urgent)';
         return;
@@ -3627,7 +3627,7 @@ function saveAll(){
   showSaveIndicator();
 }
 
-const DATA_VERSION='v52-2026-05-16';
+const DATA_VERSION='v53-2026-05-16';
 
 function loadAll(){
   const savedVersion=localStorage.getItem('pg_data_version');
