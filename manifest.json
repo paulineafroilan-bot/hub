@@ -1,0 +1,18 @@
+{
+  "name": "Pauline's Hub — Command Center",
+  "short_name": "Pauline's Hub",
+  "description": "Personal command center for clinic and home management",
+  "start_url": "/hub/",
+  "display": "standalone",
+  "background_color": "#F8F5EE",
+  "theme_color": "#1B4D2E",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231B4D2E' rx='20'/><text y='.9em' font-size='80' x='10'>🌵</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
