@@ -3192,16 +3192,21 @@ function restoreFromBackup(input){
     try{
       const data = JSON.parse(e.target.result);
 
-      // Validate it's a Pauline backup
-      if(!data._meta || (data._meta.appName !== "Pauline's Hub Command Center" && data._meta.appName !== "Pauline's Garden Command Center")){
-        fb.textContent = "❌ This does not look like a Pauline's Garden backup file.";
+      // Accept ANY pauline backup — old or new version, Garden or Hub
+      // Just check it has at least one recognizable data field
+      var hasData = data.tasks || data.patients || data.exps || data.debts ||
+                    data.gifts || data.childT || data.husT || data.meals;
+      if(!hasData){
+        fb.textContent = '❌ Could not find any data in this file. Make sure you selected the correct pauline_backup.json file.';
         fb.style.color = 'var(--urgent)';
         return;
       }
 
       // Confirm before overwriting
-      const backupDate = data._meta.backupDate ? new Date(data._meta.backupDate).toLocaleString() : 'unknown date';
-      if(!confirm('Restore backup from '+backupDate+'? This will replace ALL current data on this device with the backup. Your current data will be lost.')){
+      var backupDate = (data._meta && data._meta.backupDate)
+        ? new Date(data._meta.backupDate).toLocaleString()
+        : 'this backup';
+      if(!confirm('Restore from '+backupDate+'? All current data on this device will be replaced.')){
         fb.textContent = 'Restore cancelled.';
         return;
       }
@@ -3627,7 +3632,7 @@ function saveAll(){
   showSaveIndicator();
 }
 
-const DATA_VERSION='v53-2026-05-16';
+const DATA_VERSION='v54-2026-05-16';
 
 function loadAll(){
   const savedVersion=localStorage.getItem('pg_data_version');
