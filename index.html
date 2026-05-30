@@ -1257,6 +1257,32 @@ const GC_EVENTS = [
   {s:"2026-05-23T20:30",e:"2026-05-23T21:30",t:"Pldt latri due 💰",r:true,desc:"PLDT monthly bill payment."},
   {s:"2026-06-23T20:30",e:"2026-06-23T21:30",t:"Pldt latri due 💰",r:true,desc:"PLDT monthly bill payment."},
   {s:"2026-07-23T20:30",e:"2026-07-23T21:30",t:"Pldt latri due 💰",r:true,desc:"PLDT monthly bill payment."},
+  // New sheet entries from Google Sheet column H — synced May 26 2026
+  {s:"2026-05-20",e:"2026-05-21",t:"submit bp Hanson",allDay:true,sheet:true,desc:"From Google Sheet column H. Row 574."},
+  {s:"2026-05-22",e:"2026-05-23",t:"🔔 Reminder: update immtrac pw",allDay:true,sheet:true,desc:"Work reminder: update immtrac pw"},
+  {s:"2026-05-26",e:"2026-05-27",t:"submit KED",allDay:true,sheet:true,desc:"From Google Sheet column H. Row 625."},
+
+  // Recurring — Wednesday report (weekly through June)
+  {s:"2026-05-27T10:00",e:"2026-05-27T10:30",t:"Wednesday report — All teams",r:true,desc:"Weekly. All clinic staff."},
+  {s:"2026-06-03T10:00",e:"2026-06-03T10:30",t:"Wednesday report — All teams",r:true,desc:"Weekly. All clinic staff."},
+  {s:"2026-06-10T10:00",e:"2026-06-10T10:30",t:"Wednesday report — All teams",r:true,desc:"Weekly. All clinic staff."},
+  {s:"2026-06-17T10:00",e:"2026-06-17T10:30",t:"Wednesday report — All teams",r:true,desc:"Weekly. All clinic staff."},
+  {s:"2026-06-24T10:00",e:"2026-06-24T10:30",t:"Wednesday report — All teams",r:true,desc:"Weekly. All clinic staff."},
+
+  // Recurring — Thursday report (weekly through June)
+  {s:"2026-05-28T10:00",e:"2026-05-28T10:30",t:"Thursday report — Clinic staff",r:true,desc:"Weekly. Jenny, Lakersha, Anahi, Erika."},
+  {s:"2026-06-04T10:00",e:"2026-06-04T10:30",t:"Thursday report — Clinic staff",r:true,desc:"Weekly. Jenny, Lakersha, Anahi, Erika."},
+  {s:"2026-06-11T10:00",e:"2026-06-11T10:30",t:"Thursday report — Clinic staff",r:true,desc:"Weekly. Jenny, Lakersha, Anahi, Erika."},
+  {s:"2026-06-18T10:00",e:"2026-06-18T10:30",t:"Thursday report — Clinic staff",r:true,desc:"Weekly. Jenny, Lakersha, Anahi, Erika."},
+  {s:"2026-06-25T10:00",e:"2026-06-25T10:30",t:"Thursday report — Clinic staff",r:true,desc:"Weekly. Jenny, Lakersha, Anahi, Erika."},
+
+  // Recurring — Friday report (weekly through June)
+  {s:"2026-05-29T15:00",e:"2026-05-29T15:30",t:"Friday report — Leadership",r:true,desc:"Weekly. Sir Paul, Asad, NP Sarah, Dr. Ekadi."},
+  {s:"2026-06-05T15:00",e:"2026-06-05T15:30",t:"Friday report — Leadership",r:true,desc:"Weekly. Sir Paul, Asad, NP Sarah, Dr. Ekadi."},
+  {s:"2026-06-12T15:00",e:"2026-06-12T15:30",t:"Friday report — Leadership",r:true,desc:"Weekly. Sir Paul, Asad, NP Sarah, Dr. Ekadi."},
+  {s:"2026-06-19T15:00",e:"2026-06-19T15:30",t:"Friday report — Leadership",r:true,desc:"Weekly. Sir Paul, Asad, NP Sarah, Dr. Ekadi."},
+  {s:"2026-06-26T15:00",e:"2026-06-26T15:30",t:"Friday report — Leadership",r:true,desc:"Weekly. Sir Paul, Asad, NP Sarah, Dr. Ekadi."},
+
   // Special events
   {s:"2026-06-19",e:"2026-06-20",t:"🎂 Bday jimson",allDay:true,desc:"Jimson's birthday! 🎉"},
   {s:"2026-06-25T07:00",e:"2026-06-25T08:00",t:"Meeting with Berenice medicare",desc:"Medicare meeting with Berenice.",meeting:true},
@@ -3637,7 +3663,7 @@ function saveAll(){
   showSaveIndicator();
 }
 
-const DATA_VERSION='v56-2026-05-16';
+const DATA_VERSION='v58-2026-05-16';
 
 function loadAll(){
   const savedVersion=localStorage.getItem('pg_data_version');
@@ -3747,6 +3773,13 @@ function injectEventsIntoCalendar(evList){
   return added;
 }
 
+// ── SHEET URL for live sync ──
+// The Apps Script writes new column H events to a published Google Sheet tab
+// The app fetches this tab as JSON — no CORS issues, no login needed
+// Sheet ID: 1AWFurVB83nK4TaXcKcduPIxtZYtbcxy2oCiX6bUwJt8
+// Tab name: _CommandCenterSync (created by Apps Script)
+var SHEET_SYNC_URL = localStorage.getItem('pg_sheet_sync_url') || '';
+
 function syncCalendar(){
   var btn=document.getElementById('sync-btn');
   var icon=document.getElementById('sync-icon');
@@ -3756,31 +3789,86 @@ function syncCalendar(){
   if(btn){btn.style.opacity='0.7';btn.disabled=true;}
   if(status) status.textContent='Syncing...';
 
+  // ── Always load baked-in GC_EVENTS and localStorage events first ──
   var added=0;
   try{
-    // ── Source 1: pg_sheetEvents localStorage (from Apps Script) ──
     var stored=JSON.parse(localStorage.getItem('pg_sheetEvents')||'[]');
     added+=injectEventsIntoCalendar(stored);
-
-    // ── Source 2: GC_EVENTS baked into the app (sheet:true ones) ──
     var bakedSheet=GC_EVENTS.filter(function(e){return e.sheet;});
     added+=injectEventsIntoCalendar(bakedSheet);
+  }catch(e){}
 
-    if(added>0){
-      mutableEvents.sort(function(a,b){return a.startD-b.startD;});
-      refreshCalViews();
-      try{renderPipeline();}catch(e){}
-      try{updOv();}catch(e){}
-      refreshSheetEvents();
-      saveAll();
-    }
-  }catch(err){console.error('syncCalendar error:',err);}
+  // ── Try to fetch live from Google Sheets published CSV ──
+  var sheetId='1AWFurVB83nK4TaXcKcduPIxtZYtbcxy2oCiX6bUwJt8';
+  // Use the gviz/tq JSON endpoint — no CORS, no auth needed for published sheets
+  var url='https://docs.google.com/spreadsheets/d/'+sheetId+'/gviz/tq?tqx=out:json&sheet=_CommandCenterSync';
 
+  fetch(url, {cache:'no-cache'})
+    .then(function(r){
+      if(!r.ok) throw new Error('Sheet not published yet');
+      return r.text();
+    })
+    .then(function(text){
+      // Google wraps the JSON in /*O_o*/google.visualization.Query.setResponse(...)
+      var match=text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+      if(!match) throw new Error('Unexpected format');
+      var json=JSON.parse(match[1]);
+      var rows=json.table&&json.table.rows||[];
+      var liveAdded=0;
+      rows.forEach(function(row){
+        if(!row.c||!row.c[0]||!row.c[1]) return;
+        var title=row.c[0].v||'';
+        var dateStr=row.c[1].v||'';
+        if(!title||!dateStr) return;
+        // dateStr from Apps Script: YYYY-MM-DD
+        var cleanDate=String(dateStr).replace(/Date\(|\)|\s/g,'');
+        // Handle Google's date format: Date(2026,4,26) = May 26 2026
+        var dateParts=cleanDate.match(/(\d+),(\d+),(\d+)/);
+        var d;
+        if(dateParts){
+          d=new Date(parseInt(dateParts[1]),parseInt(dateParts[2]),parseInt(dateParts[3]));
+        } else {
+          d=new Date(dateStr);
+        }
+        if(isNaN(d.getTime())) return;
+        var ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        var ev={t:title,s:ds,e:ds,allDay:true,sheet:true,desc:'From Google Sheet column H.'};
+        // Save to localStorage
+        try{
+          var stored2=JSON.parse(localStorage.getItem('pg_sheetEvents')||'[]');
+          if(!stored2.find(function(x){return x.t===ev.t&&x.s===ev.s;})){
+            stored2.push(ev);
+            localStorage.setItem('pg_sheetEvents',JSON.stringify(stored2));
+          }
+        }catch(ex){}
+        liveAdded+=injectEventsIntoCalendar([ev]);
+      });
+      added+=liveAdded;
+      finishSync(btn,icon,status,added);
+    })
+    .catch(function(err){
+      // Sheet not published or no _CommandCenterSync tab yet — that's OK
+      // Just use what we already loaded from localStorage + GC_EVENTS
+      console.log('Live sheet sync skipped:',err.message);
+      finishSync(btn,icon,status,added);
+    });
+}
+
+function finishSync(btn,icon,status,added){
+  if(added>0){
+    mutableEvents.sort(function(a,b){return a.startD-b.startD;});
+    refreshCalViews();
+    try{renderPipeline();}catch(e){}
+    try{updOv();}catch(e){}
+    refreshSheetEvents();
+    saveAll();
+  }
   if(btn){btn.style.opacity='1';btn.disabled=false;}
+  if(icon){icon.style.transform='rotate(0deg)';}
   var timeStr=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
   try{localStorage.setItem('pg_last_gcal_sync',timeStr);}catch(e){}
-  if(status) status.textContent=(added>0?'✅ '+added+' event(s) loaded':'✅ All up to date')+' · '+timeStr;
-  showToast(added>0?'✅ '+added+' event(s) synced to Live Calendar!':'✅ Live Calendar up to date');
+  if(status) status.textContent=(added>0?'✅ '+added+' new event(s) loaded':'✅ Up to date')+' · '+timeStr;
+  showToast(added>0?'✅ '+added+' new event(s) in Live Calendar!':'✅ Calendar up to date');
 }
 
 // Called by Apps Script via addSheetEvent() to push new events into the app
