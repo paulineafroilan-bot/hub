@@ -1257,10 +1257,14 @@ const GC_EVENTS = [
   {s:"2026-05-23T20:30",e:"2026-05-23T21:30",t:"Pldt latri due 💰",r:true,desc:"PLDT monthly bill payment."},
   {s:"2026-06-23T20:30",e:"2026-06-23T21:30",t:"Pldt latri due 💰",r:true,desc:"PLDT monthly bill payment."},
   {s:"2026-07-23T20:30",e:"2026-07-23T21:30",t:"Pldt latri due 💰",r:true,desc:"PLDT monthly bill payment."},
-  // New sheet entries from Google Sheet column H — synced May 26 2026
-  {s:"2026-05-20",e:"2026-05-21",t:"submit bp Hanson",allDay:true,sheet:true,desc:"From Google Sheet column H. Row 574."},
+  // Sheet entries from Google Sheet column H — synced May 30 2026
+  {s:"2026-05-18",e:"2026-05-19",t:"review polyach Player",allDay:true,sheet:true,desc:"From Google Sheet column H."},
+  {s:"2026-05-19",e:"2026-05-20",t:"check mammo LewisL",allDay:true,sheet:true,desc:"From Google Sheet column H."},
+  {s:"2026-05-20",e:"2026-05-21",t:"submit rocamontes N minicomg",allDay:true,sheet:true,desc:"From Google Sheet column H."},
+  {s:"2026-05-20",e:"2026-05-21",t:"submit bp Hanson",allDay:true,sheet:true,desc:"From Google Sheet column H."},
   {s:"2026-05-22",e:"2026-05-23",t:"🔔 Reminder: update immtrac pw",allDay:true,sheet:true,desc:"Work reminder: update immtrac pw"},
-  {s:"2026-05-26",e:"2026-05-27",t:"submit KED",allDay:true,sheet:true,desc:"From Google Sheet column H. Row 625."},
+  {s:"2026-05-26",e:"2026-05-27",t:"submit KED",allDay:true,sheet:true,desc:"From Google Sheet column H."},
+  {s:"2026-05-30",e:"2026-05-31",t:"test entry",allDay:true,sheet:true,desc:"From Google Sheet column H."},
 
   // Recurring — Wednesday report (weekly through June)
   {s:"2026-05-27T10:00",e:"2026-05-27T10:30",t:"Wednesday report — All teams",r:true,desc:"Weekly. All clinic staff."},
@@ -3663,7 +3667,7 @@ function saveAll(){
   showSaveIndicator();
 }
 
-const DATA_VERSION='v58-2026-05-16';
+const DATA_VERSION='v59-2026-05-16';
 
 function loadAll(){
   const savedVersion=localStorage.getItem('pg_data_version');
